@@ -1,0 +1,41 @@
+gelu_kind: softsign
+
+softgelu:
+  method: softsign_inv_sqrt
+  a: ???
+  b: ???
+  c: ???
+  exp_iters:    ???
+  newton_iters: ???
+  gs_iters:     ???
+
+  gate_cheb_coeffs: null
+  gate_cheb_a: null
+  gate_cheb_b: null
+
+  inv_out_scale: null
+
+  n_min_iter: 1
+  optimal_iters: null
+  n_analytic: false
+  n_wall_iter: 2
+
+  g_min_iter: 3   
+  g_analytic: false
+  g_optimal_iters: null
+  g_wall_iter: 8
+
+  squeeze_strength: 1.0
+
+  z_min: ???
+  z_max: ???
+
+  lin_alpha: ???
+  lin_beta: ???
+
+  Ncoeffs: ???
+  Dcoeffs: ???
+
+  xmax: ???
+
+  calib_path: ${oc.select:model.approximation.hybrid.calib_path,null}   # arm-level file

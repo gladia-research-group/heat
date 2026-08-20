@@ -1,0 +1,107 @@
+batch_size: ${model.batch_size}
+target_tokens_per_update: 3328
+denom_target: 7.0         
+max_iters: 3000           
+eval_iters: 40
+log_interval: 1
+eval_interval: 500
+warmup_iters: 0
+warmup_on_resume: 0
+weight_decay: 0.1
+reset_lr_on_resume: false
+grad_clip: 1.0
+compile: false
+init_from: null          
+resume_from: null
+regularization: ${prior.name}
+
+distill: false
+distill_temperature: 1.0
+teacher_dir: ${oc.env:PROJECT_ROOT}/checkpoints/vit/eurosat_vit80/hf
+
+learning_rate: 1e-4
+min_lr: 1e-6
+
+soft_training_warmup: 500 
+phase2_lr: 1e-4 
+grad_skip_threshold: 1e6   
+grad_skip_rel: 0
+ponder_lr_const: null
+halt_temp_end: null
+halt_init_slope: 0.7       
+cooldown_iters: 1000       
+depth_reg_warmup: 1000
+act_reg_warmup: 500
+
+lr_groups:
+  learning_rate: ${trainer.learning_rate}
+  activation_lr: 3e-4
+  ponder_lr: 2e-3
+  operator_lr: 3e-4
+  min_lr: ${trainer.min_lr}
+
+lr_scheduler:
+  _target_: he_aware_training.utils.train.build_lr_scheduler
+  _partial_: true
+  warmup_iters: ${trainer.warmup_iters}
+  max_iters: ${trainer.max_iters}
+  min_lr: ${trainer.min_lr}
+
+regularizer:
+  _target_: he_aware_training.utils.loss.ActivationRegularizer
+  model: ???
+  components:
+    - suffix: intermediate_act_fn       
+      kind: max
+      threshold: ${model.act_threshold}
+    - suffix: intermediate_act_fn
+      kind: max_calib
+      threshold: ${model.approximation.hybrid.gelu.calib_path}
+      factor: 0.95
+    - suffix: inv_sqrt_approx          
+      kind: domain
+      threshold: 0.6                   
+    - suffix: attention.softmax        
+      kind: max
+      threshold: ${model.approximation.hybrid.thor.squeeze_bound}
+    - suffix: layernorm_before
+      kind: variance
+      threshold: 16.0
+    - suffix: layernorm_after
+      kind: variance
+      threshold: 16.0
+    - suffix: layernorm               
+      kind: variance
+      threshold: 16.0
+  lambda_reg: 1e-2       
+  start_step: 0
+  log_interval: ${trainer.log_interval}
+
+optimizer:
+  _target_: torch.optim.AdamW
+  lr: ${trainer.learning_rate}
+  betas: [0.9, 0.99]
+  weight_decay: ${trainer.weight_decay}
+  eps: 1e-10
+
+depth_regularizer:
+  _target_: he_aware_training.utils.loss.DepthRegularizer
+  model: ???
+  lambda_depth: 6e-1                    
+  scheduler: ???
+  log_interval: ${trainer.log_interval}
+  decr_trigger: ${prior.decr_trigger}
+  decr_patience: ${prior.decr_patience}
+  decr_min_gap: ${prior.decr_min_gap}
+  decr_wall_floor: ${prior.decr_wall_floor}
+  settle_mass: ${prior.settle_mass}
+  tau: ${prior.tau}
+
+scheduler:
+  _target_: he_aware_training.utils.loss.CurriculumScheduler
+  max_iters: ${trainer.max_iters}
+  mode: ${trainer.regularization}
+  ramp_fraction: 0.05
+  p_start: ${model.ponder_p_start}
+  p_end: ${model.ponder_p_end}
+  start_step: ${trainer.soft_training_warmup}

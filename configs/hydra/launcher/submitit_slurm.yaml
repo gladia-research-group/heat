@@ -1,0 +1,15 @@
+# @package hydra.launcher
+_target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.SlurmLauncher
+
+submitit_folder: ${hydra.sweep.dir}/.submitit/%j
+timeout_min: 1440
+nodes: 1
+tasks_per_node: 1
+gpus_per_node: 1
+partition: ${oc.env:SLURM_PARTITION,gpu}
+account: ${oc.env:SLURM_ACCOUNT,???}
+mem_gb: 100
+cpus_per_task: 10
+
+additional_parameters:
+  gres: gpu:1

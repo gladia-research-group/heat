@@ -1,0 +1,11 @@
+name: "openai-community/gpt2-medium"
+block_size: 1024
+vocab_size: 50257
+
+instance:
+  _target_: transformers.AutoModelForCausalLM.from_pretrained
+  pretrained_model_name_or_path: ${model.name}
+  device_map: null
+  torch_dtype: "auto"
+  trust_remote_code: False
+  attn_implementation: "eager"

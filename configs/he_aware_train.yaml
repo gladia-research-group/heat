@@ -1,0 +1,24 @@
+core:
+  project_name: ${oc.env:WANDB_PROJECT,he-aware-training}
+  version: 0.0.1
+  entity: ${oc.env:WANDB_ENTITY,my-entity}
+  project: ${oc.env:WANDB_PROJECT,he-aware-training}
+  tags: 
+    - he_aware_training
+    - gpt2
+
+device: cuda
+
+misc:
+  cache_dir: ${oc.env:HF_HOME,${hydra:runtime.cwd}/.cache}
+  data_path: ${oc.env:PROJECT_ROOT}/data
+  checkpoint_dir: ${oc.env:PROJECT_ROOT}/checkpoints
+
+defaults:
+  - model: gpt2
+  - model/approximation: hybrid/gpt2
+  - dataset: openwebtext
+  - trainer: he_aware
+  - prior: negative_binomial
+  - hydra: default
+  - _self_

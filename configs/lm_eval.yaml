@@ -1,0 +1,42 @@
+core:
+  project_name: ${oc.env:WANDB_PROJECT,he-aware-training}
+  version: 0.0.1
+  entity: ${oc.env:WANDB_ENTITY,my-entity}
+  project: ${oc.env:WANDB_PROJECT,he-aware-training}
+  tags:
+    - lm_eval
+    - gpt2
+
+device: cuda
+
+misc:
+  cache_dir: ${oc.env:HF_HOME,${hydra:runtime.cwd}/.cache}
+eval:
+  num_fewshot: 0
+  batch_size: 8
+
+  output_dir: ${oc.env:PROJECT_ROOT}/checkpoints/${model.name}/lm_eval
+
+  backbone_ckpt: null
+
+  run_baseline: true
+  run_hybrid: true
+
+  tasks:
+    - arc_easy
+    - hellaswag
+    - piqa
+    - mnli
+    - sst2
+    - anli_r1
+    - anli_r2
+    - anli_r3
+    - wic
+    - swag
+
+defaults:
+  - model: gpt2  # vit: eval_vit_heat_acc.py instead, bert: no eval entry point
+  - model/approximation: hybrid/gpt2     
+  - prior: negative_binomial
+  - hydra: default
+  - _self_

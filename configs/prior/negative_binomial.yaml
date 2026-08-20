@@ -1,0 +1,18 @@
+name: negative_binomial
+
+inference_mode: mode
+
+decr_trigger: mode_sat
+decr_patience: 75    
+decr_min_gap: 150
+decr_wall_floor: 2   
+settle_mass: 0.15
+
+g_wall_iter: 2
+g_wall_iter_refine: 6
+ln_g_wall_iter: 2
+ln_n_wall_iter: 2
+
+tau: 1.0
+p_start: 0.6
+p_end: 0.9

@@ -1,0 +1,25 @@
+core:
+  project_name: ${oc.env:WANDB_PROJECT,he-aware-training}
+  version: 0.0.1
+  entity: ${oc.env:WANDB_ENTITY,my-entity}
+  project: ${oc.env:WANDB_PROJECT,he-aware-training}
+  tags: 
+    - ln_variance
+    - test
+
+device: cuda
+num_shards: 1
+shard_id: 0
+merge: false
+image_size: null   
+val_split: null    
+
+misc:
+  cache_dir: ${oc.env:HF_HOME,${hydra:runtime.cwd}/.cache}
+  data_path: ${oc.env:DATA_PATH,${hydra:runtime.cwd}/data}
+
+defaults:
+  - model: gpt2  # vit: prepare_eurosat_vit80.py instead, bert: no prep step
+  - dataset: arxiv
+  - hydra: default
+  - _self_

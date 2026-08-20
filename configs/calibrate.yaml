@@ -1,0 +1,137 @@
+core:
+  project_name: ${oc.env:WANDB_PROJECT,he-aware-training}
+  version: 0.0.1
+  entity: ${oc.env:WANDB_ENTITY,my-entity}
+  project: ${oc.env:WANDB_PROJECT,he-aware-training}
+  tags:
+    - calibration
+
+device: cuda
+
+n_calib_batches: 32
+
+calib_out_path: null
+
+softgelu_per_layer: true
+softgelu_use_gate: false
+
+softgelu_method: thor_composite      # "softsign_inv_sqrt" | "thor_composite" (Moon et al. 2024)
+thor_gelu_d1: 31                      
+thor_gelu_d2: 27                 
+softgelu_range_q_hi: 1.0
+softgelu_range_margin: 0.15
+softgelu_raw_max_safety: 3.0  # vit: 1.5, bert: 1.0
+
+softgelu_fit_grid: samples             # "uniform" | "samples" | "chebyshev"
+softgelu_fit_grid_points: 4001
+softgelu_fit_sample_points: 262144
+softgelu_fit_max_iter: 8000
+
+softgelu_remez_d_num: 3
+softgelu_remez_d_den: 1
+softgelu_gs_init_method: linear
+softgelu_exp_iters: 12
+softgelu_newton_iters: 1
+softgelu_gs_iters: 14
+softgelu_denom_floor_frac: 1.0e-3
+softgelu_gate_fhe_k_ceiling: 8
+
+ln_calib_per_layer: true
+ln_center_target: 12.0      
+
+ln_range_q_lo: 0.0
+ln_range_q_hi: 1.0
+ln_range_margin: 0.15                   
+ln_z_max_safety: 2.0           # gpt2_squeeze 4.0
+ln_z_min_safety: 1.0  # vit: 6.0, bert: 6.0
+
+ln_remez_d_num: 3
+ln_remez_d_den: 1
+
+ln_gs_init_method: linear
+ln_gs_target_err: 1.0e-4
+ln_gs_max_iters: 18
+ln_gs_iters: null
+ln_gs_drift_margin: 1.0
+ln_nr_iters: 3  # vit: 3, bert: 3 (vit_heat calib 1); d2_precision 5
+ln_denom_floor_frac: 1.0e-3
+ln_rescale_target_df: 0.35
+ln_rescale_basin_safety: 0.85
+
+thor_calib_per_layer: true
+thor_fixed_delta_per_layer: false
+thor_rows_per_batch: 2048
+
+thor_decode_window: 160  # vit: 0, bert: 0; gpt2_heat 1024
+
+thor_range_q_lo: 0.0
+thor_range_q_hi: 1.0
+thor_range_margin: 0.15                 
+
+thor_delta0: null
+thor_delta1: 4
+thor_delta2: 16
+thor_delta1_min: 1
+thor_delta1_max: 16
+thor_delta2_min: 2
+thor_delta2_max: 32
+thor_poly_degree: 8
+
+thor_target_delta0: 2.5
+thor_magnitude_cap: 2885.0              
+
+thor_gs_init_method: chebyshev
+thor_init_q_lo: 0.01
+thor_init_q_hi: 1.0
+thor_d_safety: 3.0                     
+thor_gs_target_err: 1.0e-4
+thor_gs_max_iters: 16
+thor_gs_iters: null
+thor_refine_drift_margin: 1.0
+thor_denom_floor_frac: 1.0e-3
+thor_sm_kc_anchor: 4
+thor_sm_kc_tail_margin: 0.0
+
+cutmax_calibrate: false  # vit: n/a, bert: n/a (cutmax is gpt2-only)
+cutmax_rows: 128
+cutmax_entry_scale: 0.00390625
+cutmax_noise: 2.0e-4
+cutmax_gs_rel: 1.0e-3
+cutmax_margin: 1.15
+cutmax_c0: 5.0
+cutmax_c_late: 10.0
+cutmax_y_floor: 0.02
+cutmax_shift_max: 8.0
+cutmax_spread_cap: 1.0e8
+cutmax_t_max: 10
+cutmax_mass_target: 0.97
+cutmax_gap_floor: 0.75
+
+cutmax_sum_margin: 0.08
+cutmax_newton_per_pass: 5
+cutmax_newton_polish: 0
+cutmax_gs_sum_iters: 6
+cutmax_band_margin: 2.0
+cutmax_floor_safety: 5.0
+
+cutmax_floor1: 2.0e-4
+cutmax_floor2: 2.0e-4
+cutmax_wall_x1: 150.0
+cutmax_wall_x2: 150.0
+cutmax_wall_y1: 150.0
+cutmax_wall_y2: 150.0
+cutmax_conv: 0.05            
+
+misc:
+  cache_dir: ${oc.env:HF_HOME,${hydra:runtime.cwd}/.cache}
+  data_path: ${oc.env:PROJECT_ROOT}/data
+  checkpoint_dir: ${oc.env:PROJECT_ROOT}/checkpoints
+
+defaults:
+  - model: gpt2  # vit: vit, bert: bert
+  - model/approximation: hybrid/gpt2  # vit: hybrid/vit, bert: hybrid/bert
+  - dataset: openwebtext  # vit: eurosat_vit80, bert: sst2_bert
+  - trainer: he_aware  # vit: he_aware_vit, bert: he_aware_bert
+  - prior: negative_binomial
+  - hydra: default
+  - _self_

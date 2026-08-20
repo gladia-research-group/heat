@@ -1,0 +1,27 @@
+name: fineweb_edu_10bt 
+
+hf_dataset:
+  _target_: datasets.load_dataset
+  path: HuggingFaceFW/fineweb-edu
+  name: sample-10BT 
+
+get_batch:
+  _target_: he_aware_training.utils.train.compose_get_batch
+  model_name: ${model.name}
+  model_dtype: ${model.data_dtype}
+  data_path: ${misc.data_path}
+  dataset_name: ${dataset.name}
+  device: ${device}
+  micro_batch: ${trainer.batch_size}
+  block_size: ${model.block_size}
+
+data_object:
+  _target_: he_aware_training.dataset.streaming.StreamingDataset
+  _recursive_: False
+  dataset_cfg:
+    _target_: datasets.load_dataset
+    path: HuggingFaceFW/fineweb-edu
+    name: sample-10BT
+  tokenizer: ???
+  split: ???
+  model_name: ${model.name}

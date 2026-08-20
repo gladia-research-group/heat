@@ -1,0 +1,25 @@
+core:
+  project_name: ${oc.env:WANDB_PROJECT,he-aware-training}
+  version: 0.0.1
+  entity: ${oc.env:WANDB_ENTITY,my-entity}
+  project: ${oc.env:WANDB_PROJECT,he-aware-training}
+  tags:
+    - he_aware_training
+    - vit
+    - eurosat
+
+device: cuda
+seed: 3337
+
+misc:
+  data_path: ${oc.env:PROJECT_ROOT}/data
+  checkpoint_dir: ${oc.env:PROJECT_ROOT}/checkpoints
+
+defaults:
+  - model: vit
+  - model/approximation: hybrid/vit
+  - dataset: eurosat_vit80
+  - trainer: he_aware_vit
+  - prior: negative_binomial    
+  - hydra: default
+  - _self_

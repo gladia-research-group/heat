@@ -1,0 +1,15 @@
+name: code 
+hf_dataset:
+  _target_: datasets.load_dataset
+  path: codeparrot/codeparrot-clean
+  split: train
+data_object:
+  _target_: he_aware_training.dataset.streaming.StreamingDataset
+  _recursive_: False
+  dataset_cfg:
+    _target_: datasets.load_dataset
+    path: codeparrot/codeparrot-clean
+    split: train
+  tokenizer: ???
+  split: ???
+  model_name: ${model.name}

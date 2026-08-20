@@ -1,0 +1,22 @@
+name: geometric
+
+inference_mode: threshold
+
+
+decr_trigger: hard
+decr_patience: 1
+decr_min_gap: 0
+decr_wall_floor: 0
+settle_mass: 0.0        
+
+g_wall_iter: null       
+g_wall_iter_refine: null
+n_wall_iter: null
+ln_g_wall_iter: null
+ln_n_wall_iter: null
+tanh_g_wall_iter: null
+tanh_n_wall_iter: null
+
+tau: 1.0
+p_start: 0.4
+p_end: 0.9

@@ -1,0 +1,3 @@
+[submodule "perseus"]
+	path = src/perseus
+	url = https://github.com/gladia-research-group/perseus.git

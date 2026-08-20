@@ -1,0 +1,28 @@
+name: "openai-community/gpt2"
+block_size: 1024       
+vocab_size: 50257     
+batch_size: 1
+data_dtype: "uint16"   
+ponder_p_start: ${prior.p_start}
+ponder_p_end: ${prior.p_end}
+act_threshold: 32
+
+instance:
+  _target_: transformers.AutoModelForCausalLM.from_pretrained
+  pretrained_model_name_or_path: ${model.name}
+  device_map: null
+  torch_dtype: "auto"
+  trust_remote_code: False
+  attn_implementation: "eager"
+  resid_pdrop: 0.0
+  embd_pdrop: 0.0
+  attn_pdrop: 0.0
+
+surgery:
+  norm: true
+  activation: false
+  attention: true
+
+freeze:
+  embeddings: false  
+  lm_head: false 

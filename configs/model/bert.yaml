@@ -1,0 +1,25 @@
+name: "textattack/bert-base-uncased-SST-2"
+finetuned_dir: "textattack/bert-base-uncased-SST-2"
+num_classes: 2
+vocab_size: 30522        
+
+block_size: 32
+
+batch_size: 32
+ponder_p_start: ${prior.p_start}
+ponder_p_end: ${prior.p_end}
+act_threshold: 10.0
+
+instance:
+  _target_: he_aware_training.utils.bert_data.load_bert_for_heat
+  model_dir: ${model.finetuned_dir}
+  num_labels: ${model.num_classes}
+
+surgery:
+  norm: true
+  activation: false
+  attention: true
+
+freeze:
+  embeddings: false
+  classifier: false

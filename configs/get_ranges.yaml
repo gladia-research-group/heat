@@ -1,0 +1,21 @@
+defaults:
+  - model: gpt2  # vit: unsupported, bert: unsupported
+  - _self_
+
+device: cuda
+
+block_size: 512
+batch_size: 4
+n_batches: 8
+
+n_src_tokens: 300000     
+gpt2_tokenizer: gpt2
+text_bin: ${oc.env:PROJECT_ROOT}/data/openwebtext/gpt2_val.bin
+
+thor_delta2: 16         
+thor_range_q_lo: 0.001  
+thor_range_q_hi: 0.999
+thor_range_margin: 0.15
+per_call_cap: 20000     
+
+out_dir: ${oc.env:PROJECT_ROOT}/data/model_ranges
