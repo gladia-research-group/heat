@@ -1,0 +1,19 @@
+name: hybrid
+
+defaults:
+  - hybrid/softmax
+  - hybrid/layernorm
+  - hybrid/gelu          # THOR composite GeLU (Moon et al. 2024), instead of hybrid/softgelu
+  - _self_
+
+hybrid:
+  soft_training: true
+  halt_init_low: 0.02
+  halt_init_high: 0.98
+  gradient_checkpointing: false
+  inference_mode: ${prior.inference_mode}
+  calib_path: null
+
+  eval_squeeze: false
+  train_squeeze: true
+  learn_operator: false

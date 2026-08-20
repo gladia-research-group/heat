@@ -1,0 +1,27 @@
+name: "google/vit-base-patch16-224"
+finetuned_dir: ${oc.env:PROJECT_ROOT}/checkpoints/vit/gold/hf
+image_size: 80
+num_classes: 10
+vocab_size: ${model.num_classes}
+
+block_size: 26
+
+batch_size: 32
+ponder_p_start: ${prior.p_start}
+ponder_p_end: ${prior.p_end}
+act_threshold: 10.0
+
+instance:
+  _target_: he_aware_training.utils.vit_data.load_vit_for_heat
+  model_dir: ${model.finetuned_dir}
+  num_labels: ${model.num_classes}
+  resolution: ${model.image_size}
+
+surgery:
+  norm: true
+  activation: false
+  attention: true
+
+freeze:
+  embeddings: false
+  classifier: false

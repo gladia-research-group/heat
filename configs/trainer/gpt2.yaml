@@ -1,0 +1,36 @@
+batch_size: ${model.batch_size}
+target_tokens_per_update: 1048576
+gradient_accumulation_steps: 8
+max_iters: 50000
+eval_iters: 500
+log_interval: 1
+eval_interval: 250
+learning_rate: 1e-4 
+min_lr: 1e-5
+warmup_iters: 1000 
+warmup_on_resume: 0
+weight_decay: 0.1
+reset_lr_on_resume: false
+grad_clip: 1.0
+compile: true
+resume_from: null    
+
+regularizer:
+  _target_: he_aware_training.utils.loss.ActivationRegularizer
+  model: ???
+  layers:
+    - ln_1
+    - ln_2
+    - ln_f
+    - act
+  threshold: 10.0
+  lambda_reg: 1e-3
+  start_step: 0
+  log_interval: ${trainer.log_interval}
+
+optimizer:
+  _target_: torch.optim.AdamW
+  lr: ${trainer.learning_rate}
+  betas: [0.9, 0.99]
+  weight_decay: ${trainer.weight_decay}
+  eps: 1e-10

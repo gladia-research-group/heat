@@ -1,0 +1,24 @@
+core:
+  project_name: ${oc.env:WANDB_PROJECT,he-aware-training}
+  version: 0.0.1
+  entity: ${oc.env:WANDB_ENTITY,my-entity}
+  project: ${oc.env:WANDB_PROJECT,he-aware-training}
+  tags:
+    - he_aware_training
+    - bert
+    - sst2
+
+device: cuda
+
+misc:
+  data_path: ${oc.env:PROJECT_ROOT}/data
+  checkpoint_dir: ${oc.env:PROJECT_ROOT}/checkpoints
+
+defaults:
+  - model: bert
+  - model/approximation: hybrid/bert
+  - dataset: sst2_bert
+  - trainer: he_aware_bert
+  - prior: negative_binomial
+  - hydra: default
+  - _self_

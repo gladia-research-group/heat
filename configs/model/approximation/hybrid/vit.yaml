@@ -1,0 +1,24 @@
+name: hybrid
+
+defaults:
+  - hybrid/softmax
+  - hybrid/layernorm
+  - hybrid/gelu
+  - _self_
+
+hybrid:
+  attention_kind: thor_vit    
+
+  soft_training: true
+  halt_init_low: 0.02
+  halt_init_high: 0.98
+  gradient_checkpointing: false
+  inference_mode: ${prior.inference_mode}
+  calib_path: ${oc.env:PROJECT_ROOT}/configs/model/approximation/vit_squeeze/configs.json
+
+  thor:
+    squeeze_bound: 30
+
+  eval_squeeze: false
+  train_squeeze: true
+  learn_operator: false

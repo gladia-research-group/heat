@@ -1,0 +1,10 @@
+name: EuroSAT_vit80
+num_classes: 10
+
+get_batch:
+  _target_: he_aware_training.utils.vit_data.compose_get_image_batch
+  model_name: ${model.name}
+  data_path: ${misc.data_path}
+  dataset_name: EuroSAT_vit80
+  device: ${device}
+  micro_batch: ${trainer.batch_size}

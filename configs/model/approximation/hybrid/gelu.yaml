@@ -1,0 +1,13 @@
+gelu_kind: thor
+
+gelu:
+  method: thor_composite
+
+  thor_p1: ???
+  thor_p2: ???
+
+  xmax: ???       
+
+  squeeze_strength: 1.0
+
+  calib_path: ${oc.select:model.approximation.hybrid.calib_path,null}   # arm-level file

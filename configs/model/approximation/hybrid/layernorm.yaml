@@ -1,0 +1,31 @@
+ln:
+  method: ???           
+  eps: ???
+  center_scale: ???     
+  center_scale_sq: ???   
+  inv_out_scale: ???     
+  Ncoeffs: ???           
+  Dcoeffs: ???           
+  lin_alpha: ???
+  lin_beta: ???
+  gs_lo: ???
+  gs_hi: ???
+  gs_iters: ???
+  nr_iters: ???
+  z0: ???               
+  z_min: ???
+  z_max: ???
+  fit_lo: ???
+  fit_hi: ???
+  denom_floor: ???
+
+  n_min_iter: 0 
+  optimal_iters: null
+  n_analytic: false
+  n_wall_iter: ${prior.ln_n_wall_iter}
+  g_wall_iter: ${prior.ln_g_wall_iter}
+  g_min_iter: 1 
+  g_analytic: false
+  g_optimal_iters: null
+
+  calib_path: ${oc.select:model.approximation.hybrid.calib_path,null}   # arm-level file

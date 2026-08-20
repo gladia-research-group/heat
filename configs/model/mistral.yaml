@@ -1,0 +1,11 @@
+name: "mistralai/Mistral-7B-v0.1"
+block_size: 4096
+vocab_size: 32000
+
+instance:
+  _target_: transformers.AutoModelForCausalLM.from_pretrained
+  pretrained_model_name_or_path: ${model.name}
+  device_map: null
+  torch_dtype: "auto"
+  trust_remote_code: False
+  attn_implementation: "eager"

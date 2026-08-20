@@ -1,0 +1,16 @@
+name: sst2
+num_classes: 2
+
+get_batch:
+  _target_: he_aware_training.utils.bert_data.compose_get_sst2_batch
+  model_name: ${model.name}
+  hf_path: nyu-mll/glue      
+  hf_config: sst2
+  text_field: sentence
+  label_field: label
+  device: ${device}
+  micro_batch: ${trainer.batch_size}
+  val_size: 2000
+  max_len: 66
+  long_frac: 0.0
+  long_len: 128

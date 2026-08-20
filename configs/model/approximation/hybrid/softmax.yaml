@@ -1,0 +1,44 @@
+attention_kind: thor  # gpt2 keeps this; vit: thor_vit, bert: thor_bert
+
+thor:
+  poly_degree: 15
+  squeeze_strength: 1.0  # vit and bert keep 1.0; gpt2: 8
+  soft_squeeze: false   
+  calib_per_layer: false
+
+  g_iters_init: 16
+  g_min_iter_init: 1   
+  g_halt_at_init: null
+  g_analytic_init: false
+  g_wall_iter_init: ${prior.g_wall_iter}
+
+  g_iters_refine: 15
+  g_min_iter_refine: 1  
+  g_halt_at_refine: null
+  g_analytic_refine: false
+  g_wall_iter_refine: ${prior.g_wall_iter_refine}
+
+  input_scale: ???
+  mid_x: ???
+  n_squarings: ???
+  refinement_iters: ???
+  squeeze_bound: ???  # gpt2: 14, vit: 30, bert: 30
+  delta0: ???
+
+  exp_mode: cheb_series      
+  refine_mode: cuda_kc       
+
+  cheb_coeffs: ???
+  cheb_a: ???
+  cheb_b: ???
+  poly_coeffs: []            
+
+  init_alpha: ???
+  init_beta:  ???
+  refine_alpha: ???  
+  refine_beta:  ???  
+  sm_kc_r: ???       
+  gs_iters_scaled: ???         
+  gs_iters_refine_scaled: ???  
+
+  calib_path: ${oc.select:model.approximation.hybrid.calib_path,null}   # arm-level file

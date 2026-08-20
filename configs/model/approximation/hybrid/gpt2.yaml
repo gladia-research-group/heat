@@ -1,0 +1,24 @@
+name: hybrid
+
+defaults:
+  - hybrid/softmax
+  - hybrid/layernorm
+  - hybrid/gelu
+  - _self_
+
+hybrid:
+  soft_training: true
+  halt_init_low: 0.02
+  halt_init_high: 0.98
+  gradient_checkpointing: true
+  inference_mode: ${prior.inference_mode}
+
+  calib_path: ${oc.env:PROJECT_ROOT}/configs/model/approximation/gpt2_squeeze/configs.json
+
+  thor:
+    squeeze_bound: 14
+    squeeze_strength: 8
+
+  eval_squeeze: false
+  train_squeeze: true
+  learn_operator: false

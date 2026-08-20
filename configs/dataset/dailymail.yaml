@@ -1,0 +1,15 @@
+name: dailymail
+hf_dataset:
+  _target_: datasets.load_dataset
+  path: cnn_dailymail
+  name: "3.0.0"
+data_object:
+  _target_: he_aware_training.dataset.streaming.StreamingDataset
+  _recursive_: False
+  dataset_cfg:
+    _target_: datasets.load_dataset
+    path: cnn_dailymail
+    name: "3.0.0"
+  tokenizer: ???
+  split: ???
+  model_name: ${model.name}
