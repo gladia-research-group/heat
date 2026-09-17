@@ -128,9 +128,25 @@ def _load_calib_lookup(path, component=None):
         def _v4(k):
             return (k.replace(".layers.", ".encoder.layer.")
                      .replace(".mlp.activation_fn", ".intermediate.intermediate_act_fn"))
+
+        def _vit_aliases(k):
+            import re
+            m = re.fullmatch(r"transformer\.h\.(\d+)\.(attn|ln_1|ln_2|mlp\.act)", k)
+            if m:
+                b, leaf = m.group(1), m.group(2)
+                v4 = {"attn": "attention", "ln_1": "layernorm_before", "ln_2": "layernorm_after",
+                      "mlp.act": "intermediate.intermediate_act_fn"}[leaf]
+                v5 = {"attn": "attention", "ln_1": "layernorm_before", "ln_2": "layernorm_after",
+                      "mlp.act": "mlp.activation_fn"}[leaf]
+                return [f"vit.encoder.layer.{b}.{v4}", f"vit.layers.{b}.{v5}"]
+            if k == "transformer.ln_f":
+                return ["vit.layernorm"]
+            return []
         for k in list(per_layer):
             per_layer.setdefault(_v5(k), per_layer[k])
             per_layer.setdefault(_v4(k), per_layer[k])
+            for a in _vit_aliases(k):
+                per_layer.setdefault(a, per_layer[k])
         return per_layer, None
     return calib, None  # legacy flat per-layer format
 

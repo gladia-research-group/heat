@@ -35,7 +35,7 @@ eval:
     - swag
 
 defaults:
-  - model: gpt2  # vit: eval_vit_heat_acc.py instead, bert: no eval entry point
+  - model: gpt2
   - model/approximation: hybrid/gpt2     
   - prior: negative_binomial
   - hydra: default

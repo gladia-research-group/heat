@@ -20,7 +20,7 @@ thor_gelu_d1: 31
 thor_gelu_d2: 27                 
 softgelu_range_q_hi: 1.0
 softgelu_range_margin: 0.15
-softgelu_raw_max_safety: 3.0  # vit: 1.5, bert: 1.0
+softgelu_raw_max_safety: 3.0
 
 softgelu_fit_grid: samples             # "uniform" | "samples" | "chebyshev"
 softgelu_fit_grid_points: 4001
@@ -43,7 +43,7 @@ ln_range_q_lo: 0.0
 ln_range_q_hi: 1.0
 ln_range_margin: 0.15                   
 ln_z_max_safety: 2.0           # gpt2_squeeze 4.0
-ln_z_min_safety: 1.0  # vit: 6.0, bert: 6.0
+ln_z_min_safety: 1.0
 
 ln_remez_d_num: 3
 ln_remez_d_den: 1
@@ -53,7 +53,7 @@ ln_gs_target_err: 1.0e-4
 ln_gs_max_iters: 18
 ln_gs_iters: null
 ln_gs_drift_margin: 1.0
-ln_nr_iters: 3  # vit: 3, bert: 3 (vit_heat calib 1); d2_precision 5
+ln_nr_iters: 3  # d2_precision 5
 ln_denom_floor_frac: 1.0e-3
 ln_rescale_target_df: 0.35
 ln_rescale_basin_safety: 0.85
@@ -62,7 +62,7 @@ thor_calib_per_layer: true
 thor_fixed_delta_per_layer: false
 thor_rows_per_batch: 2048
 
-thor_decode_window: 160  # vit: 0, bert: 0; gpt2_heat 1024
+thor_decode_window: 160  # gpt2_heat 1024
 
 thor_range_q_lo: 0.0
 thor_range_q_hi: 1.0
@@ -92,7 +92,7 @@ thor_denom_floor_frac: 1.0e-3
 thor_sm_kc_anchor: 4
 thor_sm_kc_tail_margin: 0.0
 
-cutmax_calibrate: false  # vit: n/a, bert: n/a (cutmax is gpt2-only)
+cutmax_calibrate: false  # cutmax is gpt2-only
 cutmax_rows: 128
 cutmax_entry_scale: 0.00390625
 cutmax_noise: 2.0e-4
@@ -128,10 +128,10 @@ misc:
   checkpoint_dir: ${oc.env:PROJECT_ROOT}/checkpoints
 
 defaults:
-  - model: gpt2  # vit: vit, bert: bert
-  - model/approximation: hybrid/gpt2  # vit: hybrid/vit, bert: hybrid/bert
-  - dataset: openwebtext  # vit: eurosat_vit80, bert: sst2_bert
-  - trainer: he_aware  # vit: he_aware_vit, bert: he_aware_bert
+  - model: gpt2
+  - model/approximation: hybrid/gpt2
+  - dataset: openwebtext
+  - trainer: he_aware
   - prior: negative_binomial
   - hydra: default
   - _self_

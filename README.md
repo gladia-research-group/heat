@@ -3,17 +3,19 @@
 Fully homomorphic encryption (FHE) can run a language model without revealing the user's prompt, but the cost on GPT-2 is that generating one encrypted token takes about a minute. Most of that latency has two sources: ciphertexts carry a finite multiplicative depth budget that a bootstrap (a very slow and costly operation) must reset periodically. Even more, FHE schemes supports only additions and multiplications, thus nonlinearities must be replaced by iterative approximations, which trade latency for precision one iteration at a time, expanding the computational graph and increasing the total number of bootstrap needed to run a model. We introduce **Homomorphic-Encryption-Aware Training (HEAT)**, a fine-tuning method that makes the iteration count at every nonlinearity _learnable_, with no architectural changes and no retraining from scratch.
 
 This repository contains the code necessary to replicate the depth reducing training
-experiment. Encrypted inference runs on the [Perseus](https://github.com/gladia-research-group/perseus)
-backend, vendored here as `src/perseus` and pinned to the `heat-baseline` tag.
+experiment and the bootstrap plans of the encrypted runs. Encrypted
+inference runs on the [Perseus](https://github.com/gladia-research-group/perseus) backend, vendored here
+as `src/perseus` and pinned to the `heat-baseline` tag.
 
 ## Layout
 
 - `src/he_aware_training/`
-  - `modules/` the learnable layers. `learnable_components.py` is the ponder machinery that makes depth differentiable, `mem_eff_ponder_functions.py` its memory-efficient autograd, `learnable_{thor,vit,bert}_layers.py` the per-approximation attention.
+  - `modules/` the learnable layers. `learnable_components.py` is the ponder machinery that makes depth differentiable, `mem_eff_ponder_functions.py` its memory-efficient autograd, `learnable_{thor,vit}_layers.py` the per-approximation attention.
   - `approximation/classic.py` classical approximation machinery.
   - `scripts/` pipeline entry points, with `preprocess/` for calibration, data preparation and export
   - `utils/` data, surgery, loss, checkpointing, training loop.
-- `configs/` Hydra configs. `he_aware_train{,_vit,_bert}.yaml` are the training entries; `model/approximation/` holds the per-arm circuit descriptions.
+- `configs/` Hydra configs. `he_aware_train{,_vit}.yaml` are the training entries; `model/approximation/` holds the circuit descriptions.
+- `plans/<model>/<method>/` one directory per method: the deploy `config.json` and its bootstrap `plan/`.
 - `scripts/` scripts for FHE backend porting.
 - `src/perseus/` the FHE backend (git submodule, tag `heat-baseline`). Reads the deploy
   config and the exported weights; not needed for training or calibration.
@@ -21,10 +23,10 @@ backend, vendored here as `src/perseus` and pinned to the `heat-baseline` tag.
 ## Pipeline
 
 Every stage is a Hydra entry point tuned by Hydra overrides. For training, the arm is
-selected by `--config-name he_aware_train{,_vit,_bert}`, not by `model=`: the entry point
+selected by `--config-name he_aware_train{,_vit}`, not by `model=`: the entry point
 pins `config_name="he_aware_train"`, so `model=vit` alone would compose the ViT model
 against GPT-2's dataset, trainer and regularizer. The other stages take `model=`. Below is
-one full pass for GPT-2, with the ViT/BERT differences.
+one full pass for GPT-2, with the ViT differences.
 
 ### 0. Install
 
@@ -87,6 +89,21 @@ python src/he_aware_training/scripts/train_he_aware_llm.py \
 
 We do not train GeLU as it's later approximated as a polynomial.
 
+The trainer reads its starting calibration from `model.approximation.hybrid.calib_path`;
+GPT-2 HEAT starts from `configs/model/approximation/gpt2_heat/train_seed.json`. Model sizes
+are selected with `model=gpt2-medium` or `model=gpt2-large`.
+
+Opt-in switches, all off by default:
+
+| override | effect |
+|---|---|
+| `+model.freeze.all_but_ponder=true` | trains the halting logits only, on frozen weights |
+| `+model.approximation.hybrid.train_domain_guard=false` | removes the training-time domain clamps (LayerNorm input, Newton seed, GELU input) |
+| `+model.approximation.hybrid.train_domain_guard_strength=<s>` | scales the push-back gradient of those clamps (1.0 default) |
+| `+trainer.count_anneal.target_calib=<configs.json> +trainer.count_anneal.iters=<n>` | fixed counts: moves every site linearly from the seed's count to the target's over `n` updates, then pins it (halting-logit learning rate must be 0) |
+| `+trainer.backbone_grad_ckpt=true` | per-block gradient checkpointing of the backbone |
+| `+trainer.cooldown_clean=true` | phase three without the range loss, the domain clamps and the score squeeze |
+
 ### 4. Recalibrate LayerNorm on the trained checkpoint
 
 Training changes the activation and so their statistics, so the domains fitted in step 2 can be unstable without the clamping guards. Recalibrate the init constants against the trained checkpoint, then install them.
@@ -116,7 +133,7 @@ python scripts/make_circuit_config.py --arch gpt2 \
     --mirror configs/model/approximation/gpt2_heat
 ```
 
-Pass `--calib <dir> --counts-src <dir>` for `--arch vit`, `--calib <dir>` for `--arch bert`. `--src` must be the config carrying the step-4 domains: they exist only in a config, never in a checkpoint, so nothing here can recover them.
+Pass `--calib <dir> --counts-src <dir>` for `--arch vit`. `--src` must be the config carrying the step-4 domains: they exist only in a config, never in a checkpoint, so nothing here can recover them.
 
 ### 6. Plaintext evaluation
 
@@ -172,11 +189,11 @@ TASK=decode sbatch scripts/run_task.sh                 # planned run (STAGE=run 
 
 | variable | values |
 |---|---|
-| `TASK` | `decode` `gen` `vit80` `vit112` |
+| `TASK` | `decode` `gen` `vit80` |
 | `STAGE` | `run` planned (default) · `eager` unplanned · `capture` graph capture |
 | `RUNNER` | `python` the in-process Perseus module (default) · `cuda` the native CLI, GPT-2 only |
 | `BUILD=1` | build `_core` as part of the job |
 
-You can also run in `eager` mode, without a fixed bootstrap schedule. Such a run is correct but likely materially slower. We ship pre-computed plans to reproduce our baselines.
+You can also run in `eager` mode, without a fixed bootstrap schedule. Such a run is correct but likely materially slower. We ship pre-computed plans to reproduce our baselines, in `plans/<model>/<method>/`.
 
 Submit from a clean shell with no modules loaded, and see `src/perseus/README.md` for the rest of the backend documentation.

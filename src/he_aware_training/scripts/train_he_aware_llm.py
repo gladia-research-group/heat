@@ -167,17 +167,35 @@ def main(cfg: DictConfig):
 
     model = perform_he_surgery(model, cfg, verbose=True)
     audit_surgery(model, cfg)
+    if bool(OmegaConf.select(cfg, "trainer.backbone_grad_ckpt", default=False)):
+        model.gradient_checkpointing_enable(
+            gradient_checkpointing_kwargs={"use_reentrant": False, "determinism_check": "none"})
+        model.config.use_cache = False
+        print("[Memory] HF backbone gradient checkpointing ON (per-block recompute in backward)")
     if not cfg.model.surgery.activation:
         from he_aware_training.utils.surgery import install_gelu_input_guards
         approx = cfg.model.approximation[cfg.model.approximation.name]
         gelu_ns = "gelu" if approx.get("gelu_kind", "sign_poly") == "thor" else "softgelu"
-        install_gelu_input_guards(model, approx[gelu_ns].calib_path, component=gelu_ns)
+        if approx.get("train_domain_guard", True):
+            _gk = {"strength": float(approx["train_domain_guard_strength"])} if "train_domain_guard_strength" in approx else {}
+            install_gelu_input_guards(model, approx[gelu_ns].calib_path, component=gelu_ns, **_gk)
+        else:
+            print("[domain-guard] train_domain_guard=false: LN z / Newton-seed clamps and GELU input guards OFF in training")
     _flush_cuda_allocator()
     load_init_checkpoint(model, cfg, device)
     model.to(device)
     apply_halt_ramp(model, cfg.trainer.halt_init_slope)
 
     model = freeze_model_components(model, cfg)
+
+    count_anneal = None
+    if cfg.trainer.get("count_anneal") is not None:   # fixed-count arms: scheduled shrink seed -> target, ponder lr 0
+        from he_aware_training.utils.count_anneal import CountAnneal
+        _ca = cfg.trainer.count_anneal
+        _approx = cfg.model.approximation[cfg.model.approximation.name]
+        count_anneal = CountAnneal(model, _approx.thor.calib_path, _ca.target_calib, _ca.iters,
+                                   halt_init_low=_approx.halt_init_low, halt_init_high=_approx.halt_init_high)
+        count_anneal.init()
 
     model.train()
 
@@ -222,7 +240,10 @@ def main(cfg: DictConfig):
     act_reg_warmup = cfg.trainer.act_reg_warmup
     if act_reg_warmup > 0:
         print(f"[Warmup] Squeeze/activation penalty ramps linearly 0→full over {act_reg_warmup} steps")
-    if soft_training_warmup > 0:
+    if soft_training_warmup > 0 and iter_num >= soft_training_warmup:
+        set_soft_training(model, True)
+        print(f"[Resume] iter {iter_num} >= warmup {soft_training_warmup}: weighted PonderNet ON, no re-warmup")
+    elif soft_training_warmup > 0:
         set_soft_training(model, False)
         print(
             f"[Warmup] Starting with deterministic PonderNet for {soft_training_warmup} steps"
@@ -247,6 +268,8 @@ def main(cfg: DictConfig):
 
     while iter_num <= cfg.trainer.max_iters:
         _set_halt_temp(iter_num)
+        if count_anneal is not None:
+            count_anneal.step(iter_num)
 
         if iter_num == soft_training_warmup:   # warmup=0 ⇒ enter phase-2 (soft+phase2_lr) at iter 0
             set_soft_training(model, True)
@@ -325,7 +348,9 @@ def main(cfg: DictConfig):
             accum_task_loss += task_loss.item() / grad_accum_steps
             accum_act_reg += act_reg_loss.item() / grad_accum_steps
             accum_depth_reg += depth_kl.item() / grad_accum_steps
+            regularizer.in_backward = True
             loss.backward()
+            regularizer.in_backward = False
 
         bad_grad_params = 0
         for p in model.parameters():
@@ -412,6 +437,14 @@ def main(cfg: DictConfig):
             if g["name"] == "ponder":
                 g["lr"] = g["initial_lr"] = 0.0
 
+        if bool(OmegaConf.select(cfg, "trainer.cooldown_clean", default=False)):
+            regularizer.lambda_reg = 0.0
+            for m in model.modules():
+                if hasattr(m, "train_domain_guard"):
+                    m.train_domain_guard = False
+                if hasattr(m, "train_squeeze"):
+                    m.train_squeeze = False
+            print("[Cooldown] clean: lambda_reg=0, domain guards off, score squeeze off")
         print(f"\n[Cooldown] {cooldown_iters} steps, hard iterations, task-only")
         cooldown_end = iter_num + cooldown_iters
         t0 = time.time()
@@ -447,7 +480,9 @@ def main(cfg: DictConfig):
                     act_reg_loss = regularizer.pop_loss()
                     loss = (task_loss + act_reg_loss) / grad_accum_steps
                 accum_task_loss += task_loss.item() / grad_accum_steps
+                regularizer.in_backward = True
                 loss.backward()
+                regularizer.in_backward = False
 
             grad_norm = torch.nn.utils.clip_grad_norm_(
                 model.parameters(), cfg.trainer.grad_clip or float("inf")

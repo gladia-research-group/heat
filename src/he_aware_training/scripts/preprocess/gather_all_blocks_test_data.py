@@ -120,6 +120,11 @@ def main(cfg: DictConfig):
 
     captured, handle, blocks, first_name = capture_first_block_input(model)
     X, _ = get_batch("train")
+    if os.environ.get("GATHER_TOKENS_JSON"):   # explicit window (paired oracles across weight tiers): {"input_ids": [...]}
+        import json as _json
+        _ids = _json.load(open(os.environ["GATHER_TOKENS_JSON"]))["input_ids"]
+        X = torch.tensor([_ids], dtype=X.dtype, device=X.device)
+        print(f"[gather] using explicit window from {os.environ['GATHER_TOKENS_JSON']} (T={X.shape[1]})")
     try:
         model(X)
     except StopIteration:

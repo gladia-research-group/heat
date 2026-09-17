@@ -197,7 +197,8 @@ def collect_samples(model, get_batch, n_batches: int, rows_per_batch: int,
         X, _ = get_batch("train")
         if X is None:
             break
-        out = model(X)
+        with torch.no_grad():
+            out = model(X)
         if logit_rows and collected < logit_rows:
             lg = out.logits if hasattr(out, "logits") else out[0]
             lg2d = lg.float().reshape(-1, lg.size(-1))

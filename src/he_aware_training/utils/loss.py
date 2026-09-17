@@ -52,6 +52,7 @@ class ActivationRegularizer(nn.Module):
 
         self.step_counter: int = 0
 
+        self.in_backward = False
         self.penalties = []
         self.hooks = []
 
@@ -125,9 +126,15 @@ class ActivationRegularizer(nn.Module):
                 ref = threshold
             excess = torch.relu(stat - ref)
             if excess.any():
-                self.penalties.append(torch.mean(excess**2))
-                if kind == "domain":
-                    self.penalties.append(excess.amax() ** 2)
+                # Under backbone gradient checkpointing (non-reentrant) this hook also runs during the recompute in
+                # backward; it must execute the SAME ops (same saved-tensor count) but not re-append penalties.
+                pen = torch.mean(excess**2)
+                pen_dom = excess.amax() ** 2 if kind == "domain" else None
+                if self.in_backward:
+                    return
+                self.penalties.append(pen)
+                if pen_dom is not None:
+                    self.penalties.append(pen_dom)
                 if self.step_counter % self.log_interval == 0:
                     with torch.no_grad():
                         self.stats["general_violations"] += (stat > ref).sum().item()

@@ -1,5 +1,5 @@
 defaults:
-  - model: gpt2  # vit: unsupported, bert: unsupported
+  - model: gpt2
   - _self_
 
 device: cuda

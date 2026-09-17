@@ -19,7 +19,7 @@ misc:
   data_path: ${oc.env:DATA_PATH,${hydra:runtime.cwd}/data}
 
 defaults:
-  - model: gpt2  # vit: prepare_eurosat_vit80.py instead, bert: no prep step
+  - model: gpt2
   - dataset: arxiv
   - hydra: default
   - _self_

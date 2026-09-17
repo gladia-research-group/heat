@@ -55,6 +55,8 @@ class InvSqrtApproximation(nn.Module):
                  g_wall_iter=None,
                  n_wall_iter=None,
                  inference_mode="threshold",
+                 train_domain_guard=True,
+                 guard_strength=1.0,
                  eval_squeeze=False,
                  train_squeeze=True,
                  learn_operator=False,
@@ -65,12 +67,12 @@ class InvSqrtApproximation(nn.Module):
         self.z_max = max_val
         self.use_fixed_z_max = False
         self.eval_squeeze = eval_squeeze
+        self.train_domain_guard = train_domain_guard
+        self.guard_strength = float(guard_strength)   # STE penalty scale of the training clamps (1.0 = HEAT recipe; 0 = plain clamp, zero gradient outside)
         self.train_squeeze = train_squeeze
         self.tag = tag
 
         def _reg(name, tensor):
-            # operator learning (C arm): calib coeffs/seeds become task-trainable,
-            # init at the calibrated (validated) point; export path unchanged
             if learn_operator:
                 setattr(self, name, nn.Parameter(tensor))
             else:
@@ -144,8 +146,10 @@ class InvSqrtApproximation(nn.Module):
     def forward(self, z):
         # stability-class: z out of the Remez/GS domain can't renormalize (inv_sqrt goes
         # flat → block output ∝ input → 1e15 in one block); keep guarded even train_squeeze=off
-        if self.training or self.eval_squeeze:
-            z = squeeze(z, self.z_min, self.z_max, tag=f"{self.tag}.z")
+        if (self.training and self.train_domain_guard) or self.eval_squeeze:
+            z = squeeze(z, self.z_min, self.z_max, strength=self.guard_strength, tag=f"{self.tag}.z")
+        elif self.training:
+            z = observe_range(z, self.z_min, self.z_max, tag=f"{self.tag}.z")
 
         if self.use_taylor:
             if self.use_fixed_z_max:
@@ -161,9 +165,9 @@ class InvSqrtApproximation(nn.Module):
             y_approx = self.ponder_goldschmidt(num, den, (self.lin_alpha, self.lin_beta))
 
         nx = z if self.inv_out_scale is None else z / (self.inv_out_scale ** 2)
-        if self.training or self.eval_squeeze:
-            y_approx = squeeze(y_approx, None, (3.0 / nx).sqrt() * 0.95, tag=f"{self.tag}.newton_seed")
-            y_approx = squeeze(y_approx, 0.0, None)
+        if (self.training and self.train_domain_guard) or self.eval_squeeze:
+            y_approx = squeeze(y_approx, None, (3.0 / nx).sqrt() * 0.95, strength=self.guard_strength, tag=f"{self.tag}.newton_seed")
+            y_approx = squeeze(y_approx, 0.0, None, strength=self.guard_strength)
         inv_sqrt = self.ponder_newton(nx, y_approx)
         return inv_sqrt
     
@@ -286,6 +290,8 @@ class LearnedLayerNormHE(nn.Module):
             n_wall_iter=ln.n_wall_iter,
             inference_mode=config.inference_mode,
             eval_squeeze=config.eval_squeeze,
+            train_domain_guard=bool(config.get("train_domain_guard", True)),
+            guard_strength=float(config.get("train_domain_guard_strength", 1.0)),
             train_squeeze=config.train_squeeze,
             learn_operator=config.learn_operator,
             tag="ln",

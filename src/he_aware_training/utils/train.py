@@ -1,3 +1,4 @@
+import math
 import os
 import time
 
@@ -48,8 +49,13 @@ def freeze_model_components(model, cfg):
         )
         freeze_up_to = max(all_indices) - encoder_layers_to_train  # inclusive
 
+    all_but_ponder = bool(getattr(freeze, "all_but_ponder", False))
+
     for name, param in model.named_parameters():
         param.requires_grad = True
+        if all_but_ponder:
+            param.requires_grad = "halt_logits" in name
+            continue
         if freeze.embeddings:
             # GPT2: wte, wpe, shared | ViT: vit.embeddings
             if (
@@ -152,20 +158,23 @@ def compose_get_batch(model_name, model_dtype, data_path, dataset_name, device, 
     return get_batch, None
 
 
-def build_lr_scheduler(optimizer, warmup_iters, max_iters, min_lr):
-    from torch.optim.lr_scheduler import LinearLR, CosineAnnealingLR, SequentialLR
+class _ClampedCosine(torch.optim.lr_scheduler.LambdaLR):
+    def __init__(self, optimizer, warmup_iters, max_iters, min_lr):
+        T = max(1, max_iters - warmup_iters)
+        def factor_for(base):
+            floor = min_lr / base if base > 0 else 0.0
+            def f(t):
+                if warmup_iters > 0 and t < warmup_iters:
+                    return (t + 1) / warmup_iters
+                u = min(max(t - warmup_iters, 0), T) / T
+                return floor + (1.0 - floor) * 0.5 * (1.0 + math.cos(math.pi * u))
+            return f
+        super().__init__(optimizer, [factor_for(g["initial_lr"] if "initial_lr" in g else g["lr"]) for g in optimizer.param_groups])
 
-    if warmup_iters > 0:
-        warmup = LinearLR(
-            optimizer,
-            start_factor=1 / warmup_iters,
-            end_factor=1.0,
-            total_iters=warmup_iters,
-        )
-        cosine = CosineAnnealingLR(
-            optimizer, T_max=max_iters - warmup_iters, eta_min=min_lr
-        )
-        return SequentialLR(
-            optimizer, schedulers=[warmup, cosine], milestones=[warmup_iters]
-        )
-    return CosineAnnealingLR(optimizer, T_max=max_iters, eta_min=min_lr)
+    def load_state_dict(self, state_dict):
+        state_dict = {k: v for k, v in dict(state_dict).items() if k in ("last_epoch", "_step_count", "base_lrs", "_last_lr")}
+        self.__dict__.update(state_dict)
+
+
+def build_lr_scheduler(optimizer, warmup_iters, max_iters, min_lr):
+    return _ClampedCosine(optimizer, warmup_iters, max_iters, min_lr)

@@ -1,8 +1,8 @@
-attention_kind: thor  # gpt2 keeps this; vit: thor_vit, bert: thor_bert
+attention_kind: thor
 
 thor:
   poly_degree: 15
-  squeeze_strength: 1.0  # vit and bert keep 1.0; gpt2: 8
+  squeeze_strength: 1.0  # gpt2: 8
   soft_squeeze: false   
   calib_per_layer: false
 
@@ -22,7 +22,7 @@ thor:
   mid_x: ???
   n_squarings: ???
   refinement_iters: ???
-  squeeze_bound: ???  # gpt2: 14, vit: 30, bert: 30
+  squeeze_bound: ???  # gpt2: 14
   delta0: ???
 
   exp_mode: cheb_series      

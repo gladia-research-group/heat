@@ -27,6 +27,12 @@ def main(cfg: DictConfig):
     if model.config.vocab_size != cfg.model.vocab_size:
         model.resize_token_embeddings(cfg.model.vocab_size)
     model_tag = "classic"
+    if ckpt_path:   # trained backbone (LN affine + all weights); THOR/ponder extras in the state dict are dropped (strict=False)
+        from he_aware_training.utils.checkpoint import load_checkpoint
+        load_checkpoint(ckpt_path, model, device="cpu", strict=False,
+                        transpose_keys=(".attn.c_proj.weight",))   # square THOR Linear -> Conv1D (undetectable by shape)
+        model_tag = str(getattr(cfg.eval, "model_tag", None) or "classic")
+        print(f"Loaded backbone {ckpt_path} -> tier '{model_tag}'")
     model.eval()
 
     out_dir = os.path.join(output_dir, model_tag)
