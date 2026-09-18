@@ -138,9 +138,9 @@ class ExactMemEffPonderGoldschmidt(torch.autograd.Function):
             dF_dden = dF_dden.clamp(min=-1e6, max=1e6)
             N, D, F = goldschmidt_step(N, D, F)
 
-        # Initialize result derivatives
-        dresult_dnum = torch.zeros_like(num)
-        dresult_dden = torch.zeros_like(den)
+        # Initialize result derivatives (result = N * mask[:, 0] after the base iterations)
+        dresult_dnum = dN_dnum * mask[:, 0]
+        dresult_dden = dN_dden * mask[:, 0]
         grad_mask = torch.zeros_like(mask)
         grad_mask[:, 0] = (N * grad_output).sum(list(range(1, N.ndim))).reshape(grad_mask[:, 0].shape)
 
