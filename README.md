@@ -1,11 +1,51 @@
-# HE-Aware Training
+<p align="center">
+  <a href="https://www.uniroma1.it/en"><img src="assets/sapienza-logo.svg" alt="Sapienza University of Rome" height="76"></a>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://gladia.di.uniroma1.it">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/gladia-logo-white.svg">
+      <source media="(prefers-color-scheme: light)" srcset="assets/gladia-logo.svg">
+      <img src="assets/gladia-logo.svg" alt="GLADIA Research Group" height="84">
+    </picture>
+  </a>
+</p>
 
-Fully homomorphic encryption (FHE) can run a language model without revealing the user's prompt, but the cost on GPT-2 is that generating one encrypted token takes about a minute. Most of that latency has two sources: ciphertexts carry a finite multiplicative depth budget that a bootstrap (a very slow and costly operation) must reset periodically. Even more, FHE schemes supports only additions and multiplications, thus nonlinearities must be replaced by iterative approximations, which trade latency for precision one iteration at a time, expanding the computational graph and increasing the total number of bootstrap needed to run a model. We introduce **Homomorphic-Encryption-Aware Training (HEAT)**, a fine-tuning method that makes the iteration count at every nonlinearity _learnable_, with no architectural changes and no retraining from scratch.
+<h1 align="center">HEAT: Faster Fully Homomorphic Inference via Approximations-Weights Co-Adaptation</h1>
 
-This repository contains the code necessary to replicate the depth reducing training
-experiment and the bootstrap plans of the encrypted runs. Encrypted
-inference runs on the [Perseus](https://github.com/gladia-research-group/perseus) backend, vendored here
-as `src/perseus` and pinned to the `heat-baseline` tag.
+<p align="center">
+  <a href="https://github.com/gladia-research-group/perseus">Perseus backend</a> ·
+  <a href="#0-install">Quickstart</a> ·
+  <a href="#citation">Citation</a> ·
+  <a href="LICENSE">MIT license</a>
+</p>
+
+Fully homomorphic encryption (FHE) allows a server to run a language model directly on encrypted user prompts, but current approaches remain prohibitively slow. Ciphertexts natively support only addition, multiplication, and rotation, and multiplications may be composed only to a bounded depth before a costly bootstrapping operation is required to continue. Every nonlinearity must therefore be approximated by an iterative method; each iteration increasing the number of multiplications. A higher iteration count buys precision but exhausts the available depth more frequently and thus triggers more bootstraps, which dominate latency.
+
+We introduce **Homomorphic Encryption-Aware Training (HEAT)**, a *fine-tuning* method that makes the per-nonlinearity iteration counts *learnable*, enabling them and the model weights to co-adapt during training. HEAT optimizes iterations with respect to the task objective, allowing the model to adapt to approximation errors encountered during inference without architectural changes or retraining from scratch. We further relate iteration count to quantization bit width and bound, at fixed weights, the gap between our objective and quantization-aware training. On encrypted GPT-2 decoding, HEAT reduces iterations by 3.1×, bootstraps by 1.6×, and end-to-end latency by 1.4×, while improving decode agreement over the calibrated encrypted baseline.
+
+This repository contains the code necessary to replicate the depth reducing training experiment and the bootstrap plans of the encrypted runs. Encrypted inference runs on the [Perseus](https://github.com/gladia-research-group/perseus) backend, vendored here as `src/perseus` and pinned to the `heat-baseline` tag.
+
+## Results
+
+Encrypted GPT-2 decoding at deployment.
+
+<p align="center">
+  <a href="assets/results-table-light.png">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/results-table-dark.png">
+      <source media="(prefers-color-scheme: light)" srcset="assets/results-table-light.png">
+      <img src="assets/results-table-light.png" alt="Encrypted GPT-2 decoding. HEAT: 228 iterations per forward, 326 bootstraps per token, 37.6 s per token end-to-end, 0 of 64 collapsed sequences, 82.9% top-1, perplexity 30.7. Calibrated GPT-2: 712, 513, 54.3 s, 7 of 64, 70.3%, 44.6. ATLAS: 438, 396, 43.8 s, 13 of 64, 58.1%, 50.5." width="707">
+    </picture>
+  </a>
+</p>
+
+Per-position fidelity of each encrypted circuit against its own plaintext logits, over 64 sequences of 128 teacher-forced decode steps:
+
+<p align="center">
+  <a href="assets/he128_ladder.png"><img src="assets/he128_ladder.png" alt="Per-position fidelity over 128 decode steps: HEAT's median KL stays almost flat and its top-1 agreement ends at 78%, while the calibrated circuits fall to 23-42%; HEAT has 0 of 64 collapsed chains." width="100%"></a>
+</p>
+
+*(a) Median encrypted KL over the sequences that do not collapse. The calibrated circuits start near-exact and degrade with position, the looser tolerances faster; HEAT starts higher and stays almost flat. (b) Top-1 agreement over all sequences, the calibrated ladder falls to 23–42% by t = 128 while HEAT ends at 78%. Per-step latency is position-flat for every circuit under the Cachemir layout. (c) Collapsed sequences of 64 per method, i.e. sequences where more than 50% of the tokens couldn't be decrypted.*
 
 ## Layout
 
@@ -31,8 +71,8 @@ one full pass for GPT-2, with the ViT differences.
 ### 0. Install
 
 ```bash
-git clone --recursive https://github.com/<org>/he-aware-training.git
-cd he-aware-training
+git clone --recursive https://github.com/gladia-research-group/heat.git
+cd heat
 uv sync
 source .venv/bin/activate
 export PROJECT_ROOT=$PWD
@@ -197,3 +237,20 @@ TASK=decode sbatch scripts/run_task.sh                 # planned run (STAGE=run 
 You can also run in `eager` mode, without a fixed bootstrap schedule. Such a run is correct but likely materially slower. We ship pre-computed plans to reproduce our baselines, in `plans/<model>/<method>/`.
 
 Submit from a clean shell with no modules loaded, and see `src/perseus/README.md` for the rest of the backend documentation.
+
+## Citation
+
+If you use HEAT, please cite the paper (GitHub's *Cite this repository* button reads [`CITATION.cff`](CITATION.cff)):
+
+```bibtex
+@misc{zirilli2026heat,
+  title  = {{HEAT}: Faster Fully Homomorphic Inference via Approximations-Weights Co-Adaptation},
+  author = {Zirilli, Alessandro and Marincione, Davide and Kornaropoulos, Evgenios M. and Ateniese, Giuseppe and Rodol{\`a}, Emanuele},
+  year   = {2026},
+  url    = {https://github.com/gladia-research-group/heat}
+}
+```
+
+## License
+
+HEAT is released under the [MIT license](LICENSE). The Perseus backend vendored in `src/perseus` is a separate project under its own license (BUSL-1.1); see its repository.
