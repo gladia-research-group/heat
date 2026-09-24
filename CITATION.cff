@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper."
+title: "HEAT: Faster Fully Homomorphic Inference via Approximations-Weights Co-Adaptation"
+type: software
+authors:
+  - family-names: Zirilli
+    given-names: Alessandro
+  - family-names: Marincione
+    given-names: Davide
+  - family-names: Kornaropoulos
+    given-names: Evgenios M.
+  - family-names: Ateniese
+    given-names: Giuseppe
+  - family-names: Rodolà
+    given-names: Emanuele
+year: 2026
+repository-code: "https://github.com/gladia-research-group/heat"
