@@ -1,0 +1,10 @@
+name = "heat-proofs"
+defaultTargets = ["HEEquivQAT"]
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "8f9d9cf"
+
+[[lean_lib]]
+name = "HEEquivQAT"
