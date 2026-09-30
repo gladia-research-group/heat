@@ -14,6 +14,7 @@
 
 <p align="center">
   <a href="https://github.com/gladia-research-group/perseus">Perseus backend</a> ·
+  <a href="https://huggingface.co/gladia/heat-gpt2-small-openwebtext">Weights</a> ·
   <a href="#0-install">Quickstart</a> ·
   <a href="#citation">Citation</a> ·
   <a href="LICENSE">MIT license</a>
@@ -57,6 +58,7 @@ Per-position fidelity of each encrypted circuit against its own plaintext logits
 - `configs/` Hydra configs. `he_aware_train{,_vit}.yaml` are the training entries; `model/approximation/` holds the circuit descriptions.
 - `plans/<model>/<method>/` one directory per method: the deploy `config.json` and its bootstrap `plan/`.
 - `scripts/` scripts for FHE backend porting.
+- `proofs/` the Lean 4 formalization of the paper's appendix (`HEEquivQAT.lean`); `proofs/README.md` lists the theorems and how to check them.
 - `src/perseus/` the FHE backend (git submodule, tag `heat-baseline`). Reads the deploy
   config and the exported weights; not needed for training or calibration.
 
