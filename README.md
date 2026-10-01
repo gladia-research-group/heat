@@ -10,6 +10,12 @@
   </a>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   <a href="https://www.gmu.edu"><img src="assets/GM-monogramRGB-r.png" alt="George Mason University" height="76"></a>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/paradigma-symbol-white.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/paradigma-symbol.svg">
+    <img src="assets/paradigma-symbol.svg" alt="Paradigma" height="76">
+  </picture>
 </p>
 
 <h1 align="center">HEAT: Faster Fully Homomorphic Inference via Approximations-Weights Co-Adaptation</h1>
